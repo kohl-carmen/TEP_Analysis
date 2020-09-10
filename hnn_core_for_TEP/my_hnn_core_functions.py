@@ -102,10 +102,10 @@ def plot_hnn_core_output(dpls,net,name,kid,input_table,gaba_table,*args):
     #--------------------
     ax1=fig.add_subplot(221)
     trial=0
-    keep_for_mean=np.zeros((len(dpls),len(dpls[0].t)))
+    keep_for_mean=np.zeros((len(dpls),len(dpls[0].times)))
     for dpl in dpls:
-        ax1.plot(dpl.t,dpl.dpl['agg'],color=[.5, .5, .5],linewidth=1)
-        keep_for_mean[trial,:]=dpl.dpl['agg']
+        ax1.plot(dpl.times,dpl.data['agg'],color=[.5, .5, .5],linewidth=1)
+        keep_for_mean[trial,:]=dpl.data['agg']
         trial=trial+1
     ax1.plot(dpl.t,np.mean(keep_for_mean,0),color='k',linewidth=3,label='Model')
     ax1.plot(data_time,data,color='purple',linewidth=3,label='Data Contra')
@@ -127,8 +127,8 @@ def plot_hnn_core_output(dpls,net,name,kid,input_table,gaba_table,*args):
     ax2=fig.add_subplot(222)
     #spikes = np.array(sum(net.spiketimes, []))
     #gids = np.array(sum(net.spikegids, []))
-    spikes = np.array((net.spiketimes[0]))
-    gids = np.array((net.spikegids[0]))
+    spikes = np.array((net.spikes._times[0]))
+    gids = np.array((net.spikes._gids[0]))
     cell_types = ['L5_pyramidal', 'L5_basket', 'L2_pyramidal', 'L2_basket']
     cell_colours=['r','b','g',[.5, .5, .5]]
     count=0
@@ -152,16 +152,16 @@ def plot_hnn_core_output(dpls,net,name,kid,input_table,gaba_table,*args):
     #--------------------
     ax3=fig.add_subplot(223)
     trial=0
-    keep_for_mean2=np.zeros((len(dpls),len(dpls[0].t)))
-    keep_for_mean5=np.zeros((len(dpls),len(dpls[0].t)))
+    keep_for_mean2=np.zeros((len(dpls),len(dpls[0].times)))
+    keep_for_mean5=np.zeros((len(dpls),len(dpls[0].times)))
     for dpl in dpls:
-        plt.plot(dpl.t,dpl.dpl['L2'],color='g',linewidth=1)
-        plt.plot(dpl.t,dpl.dpl['L5'],color='r',linewidth=1)
-        keep_for_mean2[trial,:]=dpl.dpl['L2']
-        keep_for_mean5[trial,:]=dpl.dpl['L5']
+        plt.plot(dpl.times,dpl.data['L2'],color='g',linewidth=1)
+        plt.plot(dpl.times,dpl.data['L5'],color='r',linewidth=1)
+        keep_for_mean2[trial,:]=dpl.data['L2']
+        keep_for_mean5[trial,:]=dpl.data['L5']
         trial+=1
-    leg1=plt.plot(dpl.t,np.mean(keep_for_mean2,0),color='g',linewidth=3)
-    leg1=plt.plot(dpl.t,np.mean(keep_for_mean5,0),color='r',linewidth=3)
+    leg1=plt.plot(dpl.times,np.mean(keep_for_mean2,0),color='g',linewidth=3)
+    leg1=plt.plot(dpl.times,np.mean(keep_for_mean5,0),color='r',linewidth=3)
     plt.legend(('L2/3','L5'))
     ax3.title.set_text('Dipoles')
     ax3.set_xlim((0,xlim))
@@ -181,18 +181,18 @@ def plot_hnn_core_output(dpls,net,name,kid,input_table,gaba_table,*args):
             ax4=fig.add_subplot(2,4,7)
         ax4.title.set_text('Original Model')
         trial=0
-        keep_for_mean=np.zeros((len(og_dpls),len(og_dpls[0].t)))
-        keep_for_mean2=np.zeros((len(og_dpls),len(og_dpls[0].t)))
-        keep_for_mean5=np.zeros((len(og_dpls),len(og_dpls[0].t)))
+        keep_for_mean=np.zeros((len(og_dpls),len(og_dpls[0].times)))
+        keep_for_mean2=np.zeros((len(og_dpls),len(og_dpls[0].times)))
+        keep_for_mean5=np.zeros((len(og_dpls),len(og_dpls[0].times)))
         for dpl in og_dpls:
-            keep_for_mean[trial,:]=dpl.dpl['agg']
-            keep_for_mean2[trial,:]=dpl.dpl['L2']
-            keep_for_mean5[trial,:]=dpl.dpl['L5']
+            keep_for_mean[trial,:]=dpl.data['agg']
+            keep_for_mean2[trial,:]=dpl.data['L2']
+            keep_for_mean5[trial,:]=dpl.data['L5']
             trial=trial+1
         plt.plot(data_time,data,color='purple',label='data',linewidth=3)
-        plt.plot(dpl.t,np.mean(keep_for_mean,0),color='k',label='model',linewidth=3)
-        plt.plot(dpl.t,np.mean(keep_for_mean2,0),color='g',linewidth=1)
-        plt.plot(dpl.t,np.mean(keep_for_mean5,0),color='r',linewidth=1)
+        plt.plot(dpl.times,np.mean(keep_for_mean,0),color='k',label='model',linewidth=3)
+        plt.plot(dpl.times,np.mean(keep_for_mean2,0),color='g',linewidth=1)
+        plt.plot(dpl.times,np.mean(keep_for_mean5,0),color='r',linewidth=1)
         ax4.set_xlim((0,xlim))
         temp_y_range=ax4.get_ylim()
         y_range[0]=min([y_range[0],temp_y_range[0]])
@@ -219,8 +219,8 @@ def plot_hnn_core_output(dpls,net,name,kid,input_table,gaba_table,*args):
         ax5.title.set_text('Original Spiking')
         #spikes = np.array(sum(og_net.spiketimes, []))
         #gids = np.array(sum(og_net.spikegids, []))
-        spikes = np.array((og_net.spiketimes[0]))
-        gids = np.array((og_net.spikegids[0]))
+        spikes = np.array((og_net.spikes._times[0]))
+        gids = np.array((og_net.spikes._gids[0]))
     
     
         cell_types = ['L5_pyramidal', 'L5_basket', 'L2_pyramidal', 'L2_basket']
@@ -496,13 +496,12 @@ def core_output_basic(dpls,net,name,data,compare,input_table,paramoitable,*args)
     #--------------------
     ax1=fig.add_subplot(221)
     trial=0
-    keep_for_mean=np.zeros((len(dpls),len(dpls[0].t)))
-    print('test')
+    keep_for_mean=np.zeros((len(dpls),len(dpls[0].times)))
     for dpl in dpls:
         #ax1.plot(dpl.t,dpl.dpl['agg'],color=[.5, .5, .5],linewidth=1)
-        keep_for_mean[trial,:]=dpl.dpl['agg']
+        keep_for_mean[trial,:]=dpl.data['agg']
         trial=trial+1
-    ax1.plot(dpl.t,np.mean(keep_for_mean,0),color='k',linewidth=3)
+    ax1.plot(dpl.times,np.mean(keep_for_mean,0),color='k',linewidth=3)
     if data_bool==True:
         ax1.plot(data_time,data,color='purple',linewidth=3)
         #ax1.plot(data_time,data2,color='blue',linewidth=3)
@@ -531,8 +530,8 @@ def core_output_basic(dpls,net,name,data,compare,input_table,paramoitable,*args)
     ax2=fig.add_subplot(222)
     #spikes = np.array(sum(net.spiketimes, []))
     #gids = np.array(sum(net.spikegids, []))
-    spikes = np.array((net.spiketimes[0]))
-    gids = np.array((net.spikegids[0]))
+    spikes = np.array((net.spikes._times[0]))
+    gids = np.array((net.spikes._gids[0]))
     cell_types = ['L5_pyramidal', 'L5_basket', 'L2_pyramidal', 'L2_basket']
     cell_colours=['r','b','g',[.5, .5, .5]]
     count=0
@@ -556,16 +555,16 @@ def core_output_basic(dpls,net,name,data,compare,input_table,paramoitable,*args)
     #--------------------
     ax3=fig.add_subplot(223)
     trial=0
-    keep_for_mean2=np.zeros((len(dpls),len(dpls[0].t)))
-    keep_for_mean5=np.zeros((len(dpls),len(dpls[0].t)))
+    keep_for_mean2=np.zeros((len(dpls),len(dpls[0].times)))
+    keep_for_mean5=np.zeros((len(dpls),len(dpls[0].times)))
     for dpl in dpls:
-        plt.plot(dpl.t,dpl.dpl['L2'],color='g',linewidth=1)
-        plt.plot(dpl.t,dpl.dpl['L5'],color='r',linewidth=1)
-        keep_for_mean2[trial,:]=dpl.dpl['L2']
-        keep_for_mean5[trial,:]=dpl.dpl['L5']
+        plt.plot(dpl.times,dpl.data['L2'],color='g',linewidth=1)
+        plt.plot(dpl.times,dpl.data['L5'],color='r',linewidth=1)
+        keep_for_mean2[trial,:]=dpl.data['L2']
+        keep_for_mean5[trial,:]=dpl.data['L5']
         trial+=1
-    leg1=plt.plot(dpl.t,np.mean(keep_for_mean2,0),color='g',linewidth=3)
-    leg1=plt.plot(dpl.t,np.mean(keep_for_mean5,0),color='r',linewidth=3)
+    leg1=plt.plot(dpl.times,np.mean(keep_for_mean2,0),color='g',linewidth=3)
+    leg1=plt.plot(dpl.times,np.mean(keep_for_mean5,0),color='r',linewidth=3)
     plt.legend(('L2/3','L5'))
     ax3.title.set_text('Dipoles')
     ax3.set_xlim((0,xlim))
@@ -582,19 +581,19 @@ def core_output_basic(dpls,net,name,data,compare,input_table,paramoitable,*args)
         ax4=fig.add_subplot(2,4,7)
         ax4.title.set_text('Original Model')
         trial=0
-        keep_for_mean=np.zeros((len(og_dpls),len(og_dpls[0].t)))
-        keep_for_mean2=np.zeros((len(og_dpls),len(og_dpls[0].t)))
-        keep_for_mean5=np.zeros((len(og_dpls),len(og_dpls[0].t)))
+        keep_for_mean=np.zeros((len(og_dpls),len(og_dpls[0].times)))
+        keep_for_mean2=np.zeros((len(og_dpls),len(og_dpls[0].times)))
+        keep_for_mean5=np.zeros((len(og_dpls),len(og_dpls[0].times)))
         for dpl in og_dpls:
-            keep_for_mean[trial,:]=dpl.dpl['agg']
-            keep_for_mean2[trial,:]=dpl.dpl['L2']
-            keep_for_mean5[trial,:]=dpl.dpl['L5']
+            keep_for_mean[trial,:]=dpl.data['agg']
+            keep_for_mean2[trial,:]=dpl.data['L2']
+            keep_for_mean5[trial,:]=dpl.data['L5']
             trial=trial+1
             if data_bool==True:
                 plt.plot(data_time,data,color='purple',label='data',linewidth=3)
-        plt.plot(dpl.t,np.mean(keep_for_mean,0),color='k',label='model',linewidth=3)
-        plt.plot(dpl.t,np.mean(keep_for_mean2,0),color='g',linewidth=1)
-        plt.plot(dpl.t,np.mean(keep_for_mean5,0),color='r',linewidth=1)
+        plt.plot(dpl.times,np.mean(keep_for_mean,0),color='k',label='model',linewidth=3)
+        plt.plot(dpl.times,np.mean(keep_for_mean2,0),color='g',linewidth=1)
+        plt.plot(dpl.times,np.mean(keep_for_mean5,0),color='r',linewidth=1)
         ax4.set_xlim((0,xlim))
         temp_y_range=ax4.get_ylim()
         y_range[0]=min([y_range[0],temp_y_range[0]])
@@ -616,8 +615,8 @@ def core_output_basic(dpls,net,name,data,compare,input_table,paramoitable,*args)
     if compare_bool==True:
         ax5=fig.add_subplot(2,4,8)
         ax5.title.set_text('Original Spiking')
-        spikes = np.array(sum(og_net.spiketimes, []))
-        gids = np.array(sum(og_net.spikegids, []))
+        spikes = np.array(sum(og_net.spikes._times, []))
+        gids = np.array(sum(og_net.spikes._gids, []))
         cell_types = ['L5_pyramidal', 'L5_basket', 'L2_pyramidal', 'L2_basket']
         cell_colours=['r','b','g',[.5, .5, .5]]
         count=0
