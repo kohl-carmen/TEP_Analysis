@@ -8,12 +8,12 @@ clear
 close all
 
 partic=2; %[2,4]
-TESAICA=1; %if 0, runICA for blink, if 1 TESAICA automatic
-plot_steps=0;
-plot_all_elecs=0;
+TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic
+plot_steps=1;
+plot_all_elecs=1;
 
 % load eeglab
-eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2019_0';
+eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2020_0';
 cd(eeglab_dir)
 eeglab
 
@@ -29,14 +29,36 @@ plot_times=[-5 60];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LOAD RAW
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-raw_path='F:\Brown\TMS\Pilot\';
-if partic==2
-    filename_ext='1_4';
-else
-    filename_ext='4_10';
-end
+%% TMS session from Sep11, Beta02, single pulses
+raw_path='C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG';
+% M1 stimulation - thresholding 
+% (corresponding to pulses 1-41 in Brainsight file)
+filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000031.vhdr';
+% S1 stimulation - 80% threshold 
+% (corresponding to pulses 42-151 in Brainsight file)
+filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000032.vhdr';
+% S1 stimulation - 100% threshold
+% (corresponding to pulses 152-201 in Brainsight file)
+filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000033.vhdr';
+% S1 stimulation - 100% threshold - opposite direction of current - no neuronavigation - don't use this
+% (corresponding to pulses 202-206 in Brainsight file)
+filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000034.vhdr';
+% S1 stimulation - 100% threshold - opposite direction of current - with neuronavigation, but no good?
+% (corresponding to pulses 207-212 in Brainsight file)
+filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000035.vhdr';
 
-EEG = pop_loadset('filename',strcat('BETA0',num2str(partic),'_merge_',filename_ext,'.set'),'filepath',raw_path);
+EEG = pop_loadbv('C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG\', filename, [], []);
+
+
+%% path to beta02/beta04 data from before lockdown
+% raw_path='F:\Brown\TMS\Pilot\';
+% if partic==2
+%     filename_ext='1_4';
+% else
+%     filename_ext='4_10';
+% end
+% EEG = pop_loadset('filename',strcat('BETA0',num2str(partic),'_merge_',filename_ext,'.set'),'filepath',raw_path);
+
 channels=EEG.chanlocs;%for later
 [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
 eeglab redraw
