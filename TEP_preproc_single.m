@@ -10,7 +10,7 @@ close all
 partic=2; %[2,4]
 TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic
 plot_steps=1;
-plot_all_elecs=1;
+plot_all_elecs=0;
 
 % load eeglab
 eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2020_0';
@@ -31,21 +31,29 @@ plot_times=[-5 20];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TMS session from Sep11, Beta02, single pulses
 raw_path='C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG';
-% M1 stimulation - thresholding 
-% (corresponding to pulses 1-41 in Brainsight file)
-filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000031.vhdr';
-% S1 stimulation - 80% threshold 
-% (corresponding to pulses 42-151 in Brainsight file)
-filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000032.vhdr';
-% S1 stimulation - 100% threshold
-% (corresponding to pulses 152-201 in Brainsight file)
-filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000033.vhdr';
-% S1 stimulation - 100% threshold - opposite direction of current - no neuronavigation - don't use this
-% (corresponding to pulses 202-206 in Brainsight file)
-filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000034.vhdr';
-% S1 stimulation - 100% threshold - opposite direction of current - with neuronavigation, but no good?
-% (corresponding to pulses 207-212 in Brainsight file)
-filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000035.vhdr';
+SI_80=1;
+
+if S1_80
+    filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000032.vhdr';
+else %S1_100
+    filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000033.vhdr';
+end
+% 
+% % M1 stimulation - thresholding 
+% % (corresponding to pulses 1-41 in Brainsight file)
+% filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000031.vhdr';
+% % S1 stimulation - 80% threshold 
+% % (corresponding to pulses 42-151 in Brainsight file)
+% filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000032.vhdr';
+% % S1 stimulation - 100% threshold
+% % (corresponding to pulses 152-201 in Brainsight file)
+% filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000033.vhdr';
+% % S1 stimulation - 100% threshold - opposite direction of current - no neuronavigation - don't use this
+% % (corresponding to pulses 202-206 in Brainsight file)
+% filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000034.vhdr';
+% % S1 stimulation - 100% threshold - opposite direction of current - with neuronavigation, but no good?
+% % (corresponding to pulses 207-212 in Brainsight file)
+% filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000035.vhdr';
 
 EEG = pop_loadbv('C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG\', filename, [], []);
 
@@ -94,9 +102,9 @@ for chan= 1:length(EEG.chanlocs)
 end
 
 %% epoch
-raw = pop_epoch( raw, { 'S 13'}, [-2 2], 'epochinfo', 'yes');
-keep_EOG=EEG.data(64:65,:,:);
+EEG = pop_epoch( EEG, { 'S 13'}, [-2 2], 'epochinfo', 'yes');
 EEG = pop_rmbase( EEG, [-500   -100]);
+keep_EOG=EEG.data(64:65,:,:);
 
 %plot
 if plot_steps==true
@@ -123,7 +131,7 @@ end
 %     end
 %     xlabel('Time (ms)')
 %     ylabel('Ampltidue (µV)')
-%     ylim([-100 100])
+%     ylim([-200 200])
 % end
 
 if plot_all_elecs==true
@@ -241,53 +249,6 @@ for trial=1:size(EEG.data,3)
     end
 end
 EEG_minus_pulse=EEG;
-
-%% check in detail
-%     save_issues=[];
-%     detailfig1=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig2=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig3=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig4=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig5=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig6=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig7=figure('units','normalized','outerposition',[0 0 1 1]);
-%     for trial=1:size(EEG.data,1)
-%         count=0;
-%         for elec=1:size(EEG.data,1) 
-%             if elec<=size(EEG.data,1) /7
-%                 figure(detailfig1)
-%             elseif elec<=size(EEG.data,1) /7*2
-%                 figure(detailfig2)
-%             elseif elec<=size(EEG.data,1) /7*3
-%                 figure(detailfig3)
-%             elseif elec<=size(EEG.data,1) /7*4
-%                 figure(detailfig4)
-%             elseif elec<=size(EEG.data,1) /7*5
-%                 figure(detailfig5)
-%             elseif elec<=size(EEG.data,1) /7*6
-%                 figure(detailfig6)
-%             elseif elec<=size(EEG.data,1) /7*7
-%                 figure(detailfig7)
-%             end           
-%             count=count+1;
-%             subplot(3,3,count)
-%             hold on
-%             plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),keep_raw_EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial))
-%             plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial))
-%             ylim([min(EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial)),max(EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial))])
-%             title(EEG.chanlocs(elec).labels)
-%             
-%             if count==9
-%                 ok=input('OK? (Y/N)');
-%                 if ok=='N'
-%                     save_issues(size(save_isses,1)+1,:)=[trial,elec];
-%                 end
-%                 clf
-%                 count=0;
-%             end
-%         end
-%     end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Find recharge artifacts
@@ -480,55 +441,6 @@ if plot_steps==true
     figure(preprocfig)
     legend('raw','pulseonset','raw-pulse','rechargeonset','raw-pulse-recharge')
 end
-% 
-% 
-% %% check in detail
-% 
-%     save_issues=[];
-%     detailfig1=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig2=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig3=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig4=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig5=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig6=figure('units','normalized','outerposition',[0 0 1 1]);
-%     detailfig7=figure('units','normalized','outerposition',[0 0 1 1]);
-%     for trial=1:size(EEG.data,1)
-%         count=0;
-%         for elec=1:size(EEG.data,1) 
-%             if elec<=size(EEG.data,1) /7
-%                 figure(detailfig1)
-%             elseif elec<=size(EEG.data,1) /7*2
-%                 figure(detailfig2)
-%             elseif elec<=size(EEG.data,1) /7*3
-%                 figure(detailfig3)
-%             elseif elec<=size(EEG.data,1) /7*4
-%                 figure(detailfig4)
-%             elseif elec<=size(EEG.data,1) /7*5
-%                 figure(detailfig5)
-%             elseif elec<=size(EEG.data,1) /7*6
-%                 figure(detailfig6)
-%             elseif elec<=size(EEG.data,1) /7*7
-%                 figure(detailfig7)
-%             end           
-%             count=count+1;
-%             subplot(3,3,count)
-%             hold on
-%             plot(recharge_onset(trial,:),EEG.data(elec,[find(EEG.times==recharge_onset(trial,1)),find(EEG.times==recharge_onset(trial,2)),find(EEG.times==recharge_onset(trial,3))],trial),'bo')        
-%             %plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG_minus_pulse.data(elec,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial))
-%             plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(elec,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial))
-% %             ylim([min(EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial)),max(EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trial))])
-%             title(EEG.chanlocs(elec).labels)
-%             
-%             if count==9
-%                 ok=input('OK? (press any number if not)');
-%                 if ~isempty(ok)
-%                     save_issues=[save_issues,trial];
-%                 end
-%                 clf
-%                 count=0;
-%             end
-%         end
-%     end
 
 before_basic_cleaning=EEG;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -572,7 +484,7 @@ end
 
 
 %% remove bad channels
-% figure; pop_spectopo(EEG, 1, [-2000  1999], 'EEG' , 'percent', 20, 'freq', [6 10 22], 'freqrange',[2 80],'electrodes','on');
+figure; pop_spectopo(EEG, 1, [-2000  1999], 'EEG' , 'percent', 20, 'freq', [6 10 22], 'freqrange',[2 80],'electrodes','on');
 
 if partic==2
     bad=[14 20 29 47 54 57];
@@ -653,7 +565,11 @@ end
 EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:)=keep_EOG;
 %pop_eegplot( EEG, 1, 1, 1);
 if partic==2
-    EEG = pop_rejepoch( EEG, [2 7 10 25 26 28 31 42 46 50 51 55 56 59 60 61 65 69 70 71 75 76 97 104] ,0);
+    if S1_80
+        EEG = pop_rejepoch( EEG, [2 7 10 25 26 28 31 42 46 50 51 55 56 59 60 61 65 69 70 71 75 76 97 104] ,0);
+    else%SI100%
+        EEG = eeg_eegrej( EEG, [1 12000;28000 32000;52000 64000;72000 76000;100000 112000;124000 128000;136000 140000;160000 168000;176000 188000]);
+    end
 end
 
 
@@ -683,7 +599,7 @@ for trial=1:size(EEG.data,3)
     %plot(EEG.times(pulse2),zeros(size(pulse1)))
     end
 end
-refilt=0;
+refilt=1;
 if refilt
     EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
         %need new trials to plot
@@ -696,69 +612,6 @@ if refilt
              end
         end
 end
-
-% 
-% 
-% %inspect
-% figure
-% for elec=1:size(EEG.data,1)
-%     clf
-%     for trial=1:size(EEG.data,3)
-%         hold on
-%         plot(EEG.times,EEG.data(elec,:,trial))
-%     end
-%     plot([0 0],ylim,'k')
-%     plot([20 20],ylim,'k')
-%     plot([40 40],ylim,'k')
-%     title(strcat(num2str(elec),'-',EEG.chanlocs(elec).labels))
-% %     xlim([-0 60])
-%     input('h')
-% end
-% 
-% 
-% bad_i=[1 11 36 44 49 54];
-% bad_trials=[];
-% time=[-20 100];
-% time=[find(EEG.times==time(1)): find(EEG.times==time(2))];
-% figure
-% for bad_c=bad_i
-%     for trial=1:size(EEG.data,3)
-%         clf
-%         plot(EEG.times(time), EEG.data(bad_c,time,trial))%for ylim
-%         hold on
-%         plot([0 0],ylim,'k')
-%         plot([20 20],ylim,'k')
-%         plot([40 40],ylim,'k')        
-%         plot(EEG.times(time), EEG.data(bad_c,time,trial),'Linewidth',2)
-%         title(strcat(EEG.chanlocs(bad_c).labels,'- Trial ',num2str(trial)))
-%         in=input('x for rejection','s');
-%         if in=='x'
-%             bad_trials=[bad_trials,trial];
-%         end
-%     end
-% end
-%         
-% bad_trials=sort(unique(bad_trials))
-% confirm_bad=[];
-% figure
-% for trial=bad_trials
-%     clf
-%     hold on
-%     for bad_c=bad_i
-%         plot(EEG.times(time), EEG.data(bad_c,time,trial),'Linewidth',2)
-%     end
-%     plot([0 0],ylim,'k')
-%     plot([20 20],ylim,'k')
-%     plot([40 40],ylim,'k')     
-%     title(strcat(' Trial ',num2str(trial)))
-%     in=input('x for rejection','s');
-%     if in=='x'
-%         confirm_bad=[confirm_bad,trial];
-%     end
-%         
-% end
-% 
-% EEG = pop_rejepoch( EEG, confirm_bad ,0);
 
 
 
@@ -774,16 +627,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 EEG = pop_reref( EEG, []);
 
-
-
-% figure; pop_timtopo(EEG, [-100         99.96], [NaN], 'ERP data and scalp maps of Merged datasets pruned with ICA');
-% figure; pop_timtopo(EEG, [-10         100], [NaN], 'ERP data and scalp maps of Merged datasets pruned with ICA');
-
-
-% EEG = pop_rejepoch( EEG, [2 10 19 22 23 24 26 38 39 48 49 50 56 73 75 77 82 85 104 105 109 110 111 114 117 118 119 134 137 138 140 144 148 150 153 155 156 160 161:168] ,0);
-% EEG = pop_rejepoch( EEG, [17 18 20 21 42 47 51 70 73 91 92 97 98 100 112] ,0);
-
-% EEG = pop_epoch( EEG, { 'S  1' }, [-.1 .2], 'epochinfo', 'yes');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% save
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -799,9 +642,15 @@ else
     name=strcat(name,'_nofilt');
 end
 
+if ~S1_80
+    nameplus='100_';
+else
+    nameplus='';
+end
+
 %% save for Matlab
 cd(raw_path)
-save(strcat('Beta0',num2str(partic),'_TEP_',name),'EEG')
+save(strcat('Beta0',num2str(partic),'_TEP_',nameplus,name),'EEG')
 %% transform for MNE-Python
-EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_',name,'.set'),'filepath',raw_path);
+EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_',nnameplus,name,'.set'),'filepath',raw_path);
 
