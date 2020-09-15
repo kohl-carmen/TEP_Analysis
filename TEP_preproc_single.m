@@ -9,8 +9,10 @@ close all
 
 partic=2; %[2,4]
 TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic
-plot_steps=1;
+refilt=0;
+plot_steps=0;
 plot_all_elecs=0;
+S1_80=1;
 
 % load eeglab
 eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2020_0';
@@ -21,7 +23,7 @@ Partic=[2,4];
 dt=25;
 electr_oi='C3';
 
-pulse_zero_time=[-1,5];%[-.1,2];
+pulse_zero_time=[-2,5];%[-.1,2];
 recharge_zero_time=[-.5,.5];
 plot_times=[-5 20];
 
@@ -31,7 +33,6 @@ plot_times=[-5 20];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TMS session from Sep11, Beta02, single pulses
 raw_path='C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG';
-SI_80=1;
 
 if S1_80
     filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000032.vhdr';
@@ -63,9 +64,10 @@ channels=EEG.chanlocs;%for later
 eeglab redraw
 
 %% delete empty intervals
-if partic==2
-	EEG = eeg_eegrej( EEG, [341 3225725;4621908 6973467;9305976 11206768;13518123 15378218;17828242 17962334;18376857 20565749;23383042 25310059;27935367 28506000]);
-end
+% if partic==2
+%     %for S1_80, but no longer necessry
+% 	EEG = eeg_eegrej( EEG, [341 3225725;4621908 6973467;9305976 11206768;13518123 15378218;17828242 17962334;18376857 20565749;23383042 25310059;27935367 28506000]);
+% end
 %EEG.data=detrend(EEG.data);
 
 %% First, let's see what triggerd there
@@ -532,15 +534,16 @@ if plot_steps==true
          subplot(nr_trials_to_plot,1,trial)
          hold on
          plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
+         xlim([-5 100])
      end
 end
-keep_here=EEG
+keep_here=EEG;
 if TESAICA
-    
     % addpath to be able to run fast ica
     addpath('C:\Users\ckohl\Documents\MATLAB\FastICA_2.5')
     EEG = pop_tesa_fastica( EEG, 'approach', 'symm', 'g', 'tanh', 'stabilization', 'off' );
-    EEG = pop_tesa_compselect( EEG,'compCheck','off','comps',[],'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11+40 30+40],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','on','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off' );
+%     EEG = pop_tesa_compselect( EEG,'comps',15,'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11 30],'tmsMuscleFeedback','off','blink','off','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','off','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','off','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','off','elecNoiseThresh',4,'elecNoiseFeedback','off' );
+    EEG = pop_tesa_compselect( EEG,'compCheck','off','comps',[],'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11 30],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','on','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off' );
 else
     
     EEG=pop_runica(EEG, 'icatype', 'runica')
@@ -599,7 +602,6 @@ for trial=1:size(EEG.data,3)
     %plot(EEG.times(pulse2),zeros(size(pulse1)))
     end
 end
-refilt=1;
 if refilt
     EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
         %need new trials to plot
@@ -652,5 +654,5 @@ end
 cd(raw_path)
 save(strcat('Beta0',num2str(partic),'_TEP_',nameplus,name),'EEG')
 %% transform for MNE-Python
-EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_',nnameplus,name,'.set'),'filepath',raw_path);
+EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_',nameplus,name,'.set'),'filepath',raw_path);
 
