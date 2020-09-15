@@ -23,7 +23,7 @@ electr_oi='C3';
 
 pulse_zero_time=[-1,5];%[-.1,2];
 recharge_zero_time=[-.5,.5];
-plot_times=[-5 60];
+plot_times=[-5 20];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,20 +93,12 @@ for chan= 1:length(EEG.chanlocs)
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Demean Remove DC offset
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%highpass filter
-EEG=pop_eegfiltnew(EEG, .1,[],[],0,[],0)
-%Remove DC offset
-% for trial=1:size(EEG.data,3)
-%     EEG.data(:,:,trial)=EEG.data(:,:,trial)-EEG.data(:,1,trial);
-% end
-demean_time=[-1000,-10];
-demean_time_i=[find(EEG.times==demean_time(1)):find(EEG.times==demean_time(2))];
-for trial=1:size(EEG.data,3)
-    EEG.data(:,:,trial)=EEG.data(:,:,trial)-mean(EEG.data(:,demean_time_i,trial),2);
-end
+%% epoch
+raw = pop_epoch( raw, { 'S 13'}, [-2 2], 'epochinfo', 'yes');
+keep_EOG=EEG.data(64:65,:,:);
+EEG = pop_rmbase( EEG, [-500   -100]);
+
+%plot
 if plot_steps==true
     preprocfig=figure;
     nr_trials_to_plot=5;
@@ -118,6 +110,22 @@ if plot_steps==true
         plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
     end
 end
+%zoom into artifact
+% if plot_steps==true
+%     figure;
+%     zoom_plot_times=[-1 20];
+%     nr_trials_to_plot=5;
+%     %select a few trials at random to look at
+%     trials_to_plot=sort(randi(size(EEG.data,3),1,nr_trials_to_plot));
+%     for trial =1:nr_trials_to_plot
+%         hold on
+%         plot(EEG.times(find(EEG.times==zoom_plot_times(1)):find(EEG.times==zoom_plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==zoom_plot_times(1)):find(EEG.times==zoom_plot_times(2))],trials_to_plot(trial)))
+%     end
+%     xlabel('Time (ms)')
+%     ylabel('Ampltidue (µV)')
+%     ylim([-100 100])
+% end
+
 if plot_all_elecs==true
     allelecfig=figure;
     for elec=1:size(EEG.data,1)
@@ -134,9 +142,6 @@ keep_raw_EEG=EEG;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Find pulses
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% epoch
-EEG = pop_epoch( EEG, { 'S 13'}, [-2 2], 'epochinfo', 'yes');
-EEG = pop_rmbase( EEG, [-500   -100]);
 
 %detection: if the value of a sample is further than 100 sds away from the
 %mean of the some base
@@ -146,6 +151,7 @@ refract=10;% this is how long after a detected pulse I won't look for a new one
 base=[-500: -100];
 base_i=[find(EEG.times==base(1)): find(EEG.times==base(end))];
 pulse_onset=[];
+found_pulse=zeros(1,size(EEG.data,3));
 
 for trial=1:size(EEG.data,3)
     basemean=mean(EEG.data(electr_oi_i,base_i,trial));
@@ -161,10 +167,11 @@ for trial=1:size(EEG.data,3)
             if  abs(EEG.data(electr_oi_i,t+1,trial))> basemean+basesd*scale%EEG.data(electr_oi_i,t+1,trial)> EEG.data(electr_oi_i,t+1,trial).*10
                 pulse_onset(trial)=EEG.times(t);
                 just_found_one=just_found_one+1;
+                found_pulse(trial)=1;
             end
         end
     end
-    if sum(found_pulse)<1
+    if found_pulse(trial)==0
         fprintf(' Couldnt find pulse in trial %d\n',trial)
     end
 end
@@ -538,35 +545,21 @@ if plot_steps==true
 end
 
 %% downsample
+EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:)=keep_EOG;%EOG needs to be downsampled too
 EEG= pop_resample(EEG,1000);
+keep_EOG=EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:);%take back out
 dt=1;
 if plot_steps==true
+    figure(preprocfig2)
      for trial=1:nr_trials_to_plot
          subplot(nr_trials_to_plot,1,trial)
+         hold on
          plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
      end
 end
 
-%figure; pop_spectopo(EEG, 1, [], 'EEG' , 'percent',15,'freq', [10 20 30],'freqrange',[2 80],'electrodes','off');
-
 %% filter
 EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
-high=1;low=100;ord=4;type='bandpass';
-
-ordIn = ord/2;
-[z1 p1] = butter(ordIn, [high low]./(EEG.srate/2), type);
-data = double(EEG.data);
-temp = NaN(size(data,1),EEG.pnts,size(data,3));
-for x = 1:size(data,1) 
-    for y = 1:size(data,3)
-        dataFilt1 = filtfilt(z1,p1,data(x,:,y));
-        temp(x,:,y) = dataFilt1;
-    end
-end 
-EEG.data = temp;
-
-
-%EEG=tesa_filtbutter(EEG,48,52,4,'bandstop')
 
 if plot_steps==true
     figure(preprocfig2)
@@ -582,19 +575,10 @@ end
 % figure; pop_spectopo(EEG, 1, [-2000  1999], 'EEG' , 'percent', 20, 'freq', [6 10 22], 'freqrange',[2 80],'electrodes','on');
 
 if partic==2
-    bad=[20 29 47 54];
+    bad=[14 20 29 47 54 57];
 end
 EEG=pop_select(EEG, 'nochannel',bad);
 
-%% manual rejecction
-%eeglab redraw
-%pop_eegplot( EEG, 1, 1, 1);
-
-if partic==2
-    EEG = pop_rejepoch( EEG, 26,0);
-elseif partic==4
-    EEG = pop_rejepoch( EEG, 30 ,0);
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Zero out pulses
@@ -638,7 +622,7 @@ if plot_steps==true
          plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
      end
 end
-
+keep_here=EEG
 if TESAICA
     
     % addpath to be able to run fast ica
@@ -648,7 +632,7 @@ if TESAICA
 else
     
     EEG=pop_runica(EEG, 'icatype', 'runica')
-    %pop_selectcomps(EEG, [1:35] );
+    pop_selectcomps(EEG, [1:35] );
     EEG = pop_subcomp( EEG, [1], 0);
 end
 
@@ -665,9 +649,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% manual rejection
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%put raw EOG back in
+EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:)=keep_EOG;
 %pop_eegplot( EEG, 1, 1, 1);
-
-
+if partic==2
+    EEG = pop_rejepoch( EEG, [2 7 10 25 26 28 31 42 46 50 51 55 56 59 60 61 65 69 70 71 75 76 97 104] ,0);
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -676,10 +663,7 @@ end
 zero=false;
 interp=true;
 for trial=1:size(EEG.data,3)
-    pulse1=[find(EEG.times==round(pulse_onset(trial,1)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial,1)))+round(pulse_zero_time(2)*dt)];
-    pulse2=[find(EEG.times==round(pulse_onset(trial,2)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial,2)))+round(pulse_zero_time(2)*dt)];
-    pulse3=[find(EEG.times==round(pulse_onset(trial,3)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial,3)))+round(pulse_zero_time(2)*dt)];
-    
+    pulse1=[find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(2)*dt)];    
     if interp==true
         for electr=1:size(EEG.data,1)
         %     clf
@@ -687,25 +671,30 @@ for trial=1:size(EEG.data,3)
                 hold on
                 y=EEG.data(electr,:,trial);
                 x=EEG.times;
-                x([pulse1,pulse2,pulse3])=[];
-                y([pulse1,pulse2,pulse3])=[];
-                xx=EEG.times([pulse1,pulse2,pulse3]);   
+                x([pulse])=[];
+                y([pulse])=[];
+                xx=EEG.times([pulse]);   
                 yy=interp1(x,y,xx,'pchip');%pchip is cubib
-                EEG.data(electr,[pulse1,pulse2,pulse3],trial)=yy;
+                EEG.data(electr,[pulse],trial)=yy;
         %     plot(xx, yy,'.')
          end
     elseif zero==true
-        EEG.data(:,[pulse1,pulse2,pulse3],trial)=0;
+        EEG.data(:,[pulse],trial)=0;
     %plot(EEG.times(pulse2),zeros(size(pulse1)))
     end
 end
-EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
-if plot_steps==true
-     for trial=1:nr_trials_to_plot
-         subplot(nr_trials_to_plot,1,trial)
-         hold on
-         plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
-     end
+refilt=0;
+if refilt
+    EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
+        %need new trials to plot
+        trials_to_plot=sort(randi(size(EEG.data,3),1,nr_trials_to_plot));
+        if plot_steps==true
+             for trial=1:nr_trials_to_plot
+                 subplot(nr_trials_to_plot,1,trial)
+                 hold on
+                 plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
+             end
+        end
 end
 
 % 
@@ -776,7 +765,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Interpolate Removed Channels
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if size(EEG.data,1) < 63
+if size(EEG.data,1) < 65
     EEG=pop_interp(EEG,channels,'spherical');
 end
 
@@ -800,13 +789,19 @@ EEG = pop_reref( EEG, []);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if TESAICA
-    name='TESA';
+    name='TESAICA';
 else
-    name='run';
+    name='runICA';
 end
+if refilt
+    name=strcat(name,'_refilt');
+else
+    name=strcat(name,'_nofilt');
+end
+
 %% save for Matlab
-% cd(raw_path)
-% save(strcat('Beta0',num2str(partic),'_TEP_1k_',name,'ICA_filt100'),'EEG')
+cd(raw_path)
+save(strcat('Beta0',num2str(partic),'_TEP_',name),'EEG')
 %% transform for MNE-Python
-%EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_1k_',name,'ICA_filt100.set'),'filepath',raw_path);
+EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_',name,'.set'),'filepath',raw_path);
 
