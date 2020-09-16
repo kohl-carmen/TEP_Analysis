@@ -8,11 +8,12 @@ clear
 close all
 
 partic=2; %[2,4]
-TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic
+ICA=0; %if 0 -> no ica at all
+    TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic
 refilt=0;
 plot_steps=0;
 plot_all_elecs=0;
-S1_80=1;
+S1_80=0;
 
 % load eeglab
 eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2020_0';
@@ -23,7 +24,7 @@ Partic=[2,4];
 dt=25;
 electr_oi='C3';
 
-pulse_zero_time=[-2,5];%[-.1,2];
+pulse_zero_time=[-1,5];%[-.1,2];
 recharge_zero_time=[-.5,.5];
 plot_times=[-5 20];
 
@@ -493,74 +494,79 @@ if partic==2
 end
 EEG=pop_select(EEG, 'nochannel',bad);
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Zero out pulses
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %zero out for ICA
 %it's downsampled now, so tha'ts different!
-zero=true;
-interp=false;
+if ICA
+    zero=true;
+    interp=false;
 
-for trial=1:size(EEG.data,3)
-    pulse=[find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(2)*dt)];   
-    if interp==true
-        for electr=1:size(EEG.data,1)
-        %     clf
-        %     plot(EEG.times(999*dt:1020*dt), EEG.data(electr,[999*dt:1020*dt],1))
-                hold on
-                y=EEG.data(electr,:,trial);
-                x=EEG.times;
-                x([pulse1])=[];
-                y([pulse1])=[];
-                xx=EEG.times([pulse]);   
-                yy=interp1(x,y,xx,'pchip');%pchip is cubib
-                EEG.data(electr,[pulse],trial)=yy;
-        %     plot(xx, yy,'.')
-         end
-    elseif zero==true
-        EEG.data(:,[pulse],trial)=0;
-    %plot(EEG.times(pulse2),zeros(size(pulse1)))
+    for trial=1:size(EEG.data,3)
+        pulse=[find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(2)*dt)];   
+        if interp==true
+            for electr=1:size(EEG.data,1)
+            %     clf
+            %     plot(EEG.times(999*dt:1020*dt), EEG.data(electr,[999*dt:1020*dt],1))
+                    hold on
+                    y=EEG.data(electr,:,trial);
+                    x=EEG.times;
+                    x([pulse1])=[];
+                    y([pulse1])=[];
+                    xx=EEG.times([pulse]);   
+                    yy=interp1(x,y,xx,'pchip');%pchip is cubib
+                    EEG.data(electr,[pulse],trial)=yy;
+            %     plot(xx, yy,'.')
+             end
+        elseif zero==true
+            EEG.data(:,[pulse],trial)=0;
+        %plot(EEG.times(pulse2),zeros(size(pulse1)))
+        end
     end
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ICA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if plot_steps==true
-    figure(preprocfig2)
-     for trial=1:nr_trials_to_plot
-         subplot(nr_trials_to_plot,1,trial)
-         hold on
-         plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
-         xlim([-5 100])
-     end
-end
-keep_here=EEG;
-if TESAICA
-    % addpath to be able to run fast ica
-    addpath('C:\Users\ckohl\Documents\MATLAB\FastICA_2.5')
-    EEG = pop_tesa_fastica( EEG, 'approach', 'symm', 'g', 'tanh', 'stabilization', 'off' );
-%     EEG = pop_tesa_compselect( EEG,'comps',15,'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11 30],'tmsMuscleFeedback','off','blink','off','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','off','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','off','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','off','elecNoiseThresh',4,'elecNoiseFeedback','off' );
-    EEG = pop_tesa_compselect( EEG,'compCheck','off','comps',[],'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11 30],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','on','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off' );
-else
-    
-    EEG=pop_runica(EEG, 'icatype', 'runica')
-    pop_selectcomps(EEG, [1:35] );
-    EEG = pop_subcomp( EEG, [1], 0);
-end
+if ICA
+    if plot_steps==true
+        figure(preprocfig2)
+         for trial=1:nr_trials_to_plot
+             subplot(nr_trials_to_plot,1,trial)
+             hold on
+             plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
+             xlim([-5 100])
+         end
+    end
+    keep_here=EEG;
+    if TESAICA
+        % addpath to be able to run fast ica
+        addpath('C:\Users\ckohl\Documents\MATLAB\FastICA_2.5')
+        EEG = pop_tesa_fastica( EEG, 'approach', 'symm', 'g', 'tanh', 'stabilization', 'off' );
+    %     EEG = pop_tesa_compselect( EEG,'comps',15,'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11 30],'tmsMuscleFeedback','off','blink','off','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','off','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','off','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','off','elecNoiseThresh',4,'elecNoiseFeedback','off' );
+        EEG = pop_tesa_compselect( EEG,'compCheck','off','comps',[],'figSize','small','plotTimeX',[-200 500],'plotFreqX',[1 100],'tmsMuscle','on','tmsMuscleThresh',8,'tmsMuscleWin',[11 30],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',{'Fp1','Fp2'},'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',{'F7','F8'},'moveFeedback','off','muscle','on','muscleThresh',0.6,'muscleFreqWin',[30 100],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off' );
+    else
 
-if plot_steps==true
-    figure(preprocfig2)
-     for trial=1:nr_trials_to_plot
-         subplot(nr_trials_to_plot,1,trial)
-         hold on
-         plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
-     end
-end
+        EEG=pop_runica(EEG, 'icatype', 'runica')
+        pop_selectcomps(EEG, [1:35] );
+        EEG = pop_subcomp( EEG, [1], 0);
+    end
 
-% 
+    eeglab redraw
+    this=pop_select(EEG, 'nochannel',[58 59]);
+    figure; pop_timtopo(this, [-50  500], [10 20 100 200]);
+
+    if plot_steps==true
+        figure(preprocfig2)
+         for trial=1:nr_trials_to_plot
+             subplot(nr_trials_to_plot,1,trial)
+             hold on
+             plot(EEG.times(find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))),EEG.data(electr_oi_i,[find(EEG.times==plot_times(1)):find(EEG.times==plot_times(2))],trials_to_plot(trial)))
+         end
+    end
+    keep=EEG
+end 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% manual rejection
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -569,9 +575,11 @@ EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:)=keep_EOG;
 %pop_eegplot( EEG, 1, 1, 1);
 if partic==2
     if S1_80
-        EEG = pop_rejepoch( EEG, [2 7 10 25 26 28 31 42 46 50 51 55 56 59 60 61 65 69 70 71 75 76 97 104] ,0);
+        %this one was from when we had a rejection before epoching
+        %EEG = pop_rejepoch( EEG, [2 7 10 25 26 28 31 42 46 50 51 55 56 59 60 61 65 69 70 71 75 76 97 104] ,0);
+       EEG = pop_rejepoch( EEG, [1 2 4:2:10 11 12 16 18 19 20 24 26 27 29 32 38 43 47 51 52 54 56 57 60 61 62 65 66 70 71 72 76 77 78 95 98 99 102:3:105] ,0);
     else%SI100%
-        EEG = eeg_eegrej( EEG, [1 12000;28000 32000;52000 64000;72000 76000;100000 112000;124000 128000;136000 140000;160000 168000;176000 188000]);
+        EEG = pop_rejepoch( EEG, [1:3 6 8 9 14 15:17 19 26 27 28 33 35 41 42 45 46:47] ,0);
     end
 end
 
@@ -579,29 +587,33 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Interpolate pulses and Filter again
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-zero=false;
-interp=true;
-for trial=1:size(EEG.data,3)
-    pulse1=[find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(2)*dt)];    
-    if interp==true
-        for electr=1:size(EEG.data,1)
-        %     clf
-        %     plot(EEG.times(999*dt:1020*dt), EEG.data(electr,[999*dt:1020*dt],1))
-                hold on
-                y=EEG.data(electr,:,trial);
-                x=EEG.times;
-                x([pulse])=[];
-                y([pulse])=[];
-                xx=EEG.times([pulse]);   
-                yy=interp1(x,y,xx,'pchip');%pchip is cubib
-                EEG.data(electr,[pulse],trial)=yy;
-        %     plot(xx, yy,'.')
-         end
-    elseif zero==true
-        EEG.data(:,[pulse],trial)=0;
-    %plot(EEG.times(pulse2),zeros(size(pulse1)))
+if ICA
+    zero=false;
+    interp=true;
+    for trial=1:size(EEG.data,3)
+        pulse1=[find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(1)*dt): find(EEG.times==round(pulse_onset(trial)))+round(pulse_zero_time(2)*dt)];    
+        if interp==true
+            for electr=1:size(EEG.data,1)
+            %     clf
+            %     plot(EEG.times(999*dt:1020*dt), EEG.data(electr,[999*dt:1020*dt],1))
+                    hold on
+                    y=EEG.data(electr,:,trial);
+                    x=EEG.times;
+                    x([pulse])=[];
+                    y([pulse])=[];
+                    xx=EEG.times([pulse]);   
+                    yy=interp1(x,y,xx,'pchip');%pchip is cubib
+                    EEG.data(electr,[pulse],trial)=yy;
+            %     plot(xx, yy,'.')
+             end
+        elseif zero==true
+            EEG.data(:,[pulse],trial)=0;
+        %plot(EEG.times(pulse2),zeros(size(pulse1)))
+        end
     end
 end
+
+
 if refilt
     EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
         %need new trials to plot
@@ -632,12 +644,16 @@ EEG = pop_reref( EEG, []);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% save
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if TESAICA
-    name='TESAICA';
+if ~ICA
+    name='noica';
 else
-    name='runICA';
+    if TESAICA
+        name='TESAICA';
+    else
+        name='runICA';
+    end
 end
+
 if refilt
     name=strcat(name,'_refilt');
 else
