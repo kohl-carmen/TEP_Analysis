@@ -1,14 +1,12 @@
-http://www.fieldtriptoolbox.org/tutorial/continuous/
-raw_path='C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG';
+%% TEP Preproc Pipe
+
+%esentially copied from %http://www.fieldtriptoolbox.org/tutorial/continuous/
+raw_path='C:\Users\ckohl\Desktop\Current\Data\TMS\EEG';
+dump_path=strcat(raw_path,'\fieldtrip');
 
 addpath C:\Users\ckohl\Documents\MATLAB\fieldtrip-20200914
 ft_defaults
 
-%load
-cfg = [];
-% cfg.dataset = strcat(raw_path,'\',filename);
-cfg.dataset = 'C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG\Beta02_TEP_TESAICA_refilt.set'
-data_eeg=ft_preprocessing(cfg)
 
 %% DEFINE TRIAL MATRIX
 trigger ={'S 13'};
@@ -30,7 +28,7 @@ cfg.refchannel = {'all'}; % Here we specify our reference channels
 cfg.implicitref = 'TP10';    % Here we can specify the name of the implicit reference electrode used during the acquisition
 data_tms_raw = ft_preprocessing(cfg);
 
-cd('C:\Users\ckohl\Desktop\')
+cd(dump_path)
 save('data_tms_raw','data_tms_raw','-v7.3');
 
 %% BROWSE
@@ -142,66 +140,72 @@ cfg.continuous = 'yes'; % Setting this to yes forces ft_databrowser to represent
 ft_databrowser(cfg, data_tms_segmented);
 
 %% ICA
-%% Perform ICA on segmented data
-cfg = [];
-cfg.demean = 'yes';
-cfg.method = 'fastica';        % FieldTrip supports multiple ways to perform ICA, 'fastica' is one of them.
-cfg.fastica.approach = 'symm'; % All components will be estimated simultaneously.
-cfg.fastica.g = 'gauss';
+% I didn't end up removing anything so this can be skipped.
+% All my components had strong signals later on in the trial, so I want to
+% keep those. I think it might be because our decay is too quick, so it's
+% automaticall removed before this step. Not sure what's happening to the
+% muscle artifacts
 
-comp_tms = ft_componentanalysis(cfg, data_tms_segmented);
-
-save('comp_tms','comp_tms','-v7.3');
-
-
-cfg = [];
-comp_tms_avg = ft_timelockanalysis(cfg, comp_tms);
-
-
-figure;
-cfg = [];
-cfg.viewmode = 'butterfly';
-cfg.channel   ='fastica011';
-ft_databrowser(cfg, comp_tms_avg);
-
-cfg=[];
-cfg.elec=data_tms_raw.elec;
-layout=ft_prepare_layout(cfg);
-
-figure;
-cfg           = [];
-cfg.component = [1:63];
-cfg.comment   = 'no';
-cfg.layout    =  layout;% 'easycapM10'; % If you use a function that requires plotting of topographical information you need to supply the function with the location of your channels
-ft_topoplotIC(cfg, comp_tms);
-
-
-cfg          = [];
-cfg.demean   = 'no'; % This has to be explicitly stated as the default is to demean.
-cfg.unmixing = comp_tms.unmixing; % Supply the matrix necessay to 'unmix' the channel-series data into components
-cfg.topolabel = comp_tms.topolabel; % Supply the original channel label information
-
-comp_tms          = ft_componentanalysis(cfg, data_tms_segmented);
-
-%%  REMOVE COMPONENTS
-% skipping this for not
-data_tms_clean_segmented=data_tms_segmented;
-
-cfg                = [];
-cfg.vartrllength   = 2;
-cfg.preproc.demean = 'no'; % Demeaning is still applied on the segments of the trials, rather than the entire trial. To avoid offsets within trials, set this to 'no'
-
-data_tms_clean_avg = ft_timelockanalysis(cfg, data_tms_clean_segmented);
-
-% Plot all channels
-for i=1:numel(data_tms_clean_avg.label) % Loop through all channels
-    figure;
-    plot(data_tms_clean_avg.time, data_tms_clean_avg.avg(i,:),'b'); % Plot all data
-    xlim([-0.1 0.6]); % Here we can specify the limits of what to plot on the x-axis
-    title(['Channel ' data_tms_clean_avg.label{i}]);
-    ylabel('Amplitude (uV)')
-    xlabel('Time (s)');
-end
+% %% Perform ICA on segmented data
+% cfg = [];
+% cfg.demean = 'yes';
+% cfg.method = 'fastica';        % FieldTrip supports multiple ways to perform ICA, 'fastica' is one of them.
+% cfg.fastica.approach = 'symm'; % All components will be estimated simultaneously.
+% cfg.fastica.g = 'gauss';
+% 
+% comp_tms = ft_componentanalysis(cfg, data_tms_segmented);
+% 
+% save('comp_tms','comp_tms','-v7.3');
+% 
+% 
+% cfg = [];
+% comp_tms_avg = ft_timelockanalysis(cfg, comp_tms);
+% 
+% 
+% figure;
+% cfg = [];
+% cfg.viewmode = 'butterfly';
+% cfg.channel   ='fastica011';
+% ft_databrowser(cfg, comp_tms_avg);
+% 
+% cfg=[];
+% cfg.elec=data_tms_raw.elec;
+% layout=ft_prepare_layout(cfg);
+% 
+% figure;
+% cfg           = [];
+% cfg.component = [1:63];
+% cfg.comment   = 'no';
+% cfg.layout    =  layout;% 'easycapM10'; % If you use a function that requires plotting of topographical information you need to supply the function with the location of your channels
+% ft_topoplotIC(cfg, comp_tms);
+% 
+% 
+% cfg          = [];
+% cfg.demean   = 'no'; % This has to be explicitly stated as the default is to demean.
+% cfg.unmixing = comp_tms.unmixing; % Supply the matrix necessay to 'unmix' the channel-series data into components
+% cfg.topolabel = comp_tms.topolabel; % Supply the original channel label information
+% 
+% comp_tms          = ft_componentanalysis(cfg, data_tms_segmented);
+% 
+% %%  REMOVE COMPONENTS
+% % skipping this for not
+% data_tms_clean_segmented=data_tms_segmented;
+% 
+% cfg                = [];
+% cfg.vartrllength   = 2;
+% cfg.preproc.demean = 'no'; % Demeaning is still applied on the segments of the trials, rather than the entire trial. To avoid offsets within trials, set this to 'no'
+% 
+% data_tms_clean_avg = ft_timelockanalysis(cfg, data_tms_clean_segmented);
+% 
+% % Plot all channels
+% for i=1:numel(data_tms_clean_avg.label) % Loop through all channels
+%     figure;
+%     plot(data_tms_clean_avg.time, data_tms_clean_avg.avg(i,:),'b'); % Plot all data
+%     xlim([-0.1 0.6]); % Here we can specify the limits of what to plot on the x-axis
+%     title(['Channel ' data_tms_clean_avg.label{i}]);
+%     ylabel('Amplitude (uV)')
+%     xlabel('Time (s)');
+% end
 
 %% INTERPOLATE
 % Apply original structure to segmented data, gaps will be filled with nans
@@ -304,7 +308,7 @@ cd(eeglab_dir)
 eeglab
 
 %load something with the right channels and stuff
-load('C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG\Beta02_TEP_100_TESAICA_nofilt.mat')
+load('C:\Users\ckohl\Desktop\Current\Data\TMS\EEG\Beta02_TEP_100_TESAICA_nofilt.mat')
 eeglab redraw
 
 %edit EEG structure by hand
@@ -348,22 +352,54 @@ end
 EEG.data=DATA;
 EEG.icachansind=[];
 EEG.chanlocs=EEG.chanlocs(1:63);
-% EEG.event=[];
 EEG.epoch=[];
 EEG.reject=[];
 EEG.etc=[];
 EEG.icaBadComp1=[];
 
-%event latencies
-% lat=501;
-% for trial=2:length(data_after_rej.trial)
-%     lat(trial,:)=lat(trial-1,:)+2000;
-% end
+% fixin events is not straight forward
+latency=find(round(EEG.times)==0);
+for trial=1:length(data_after_rej.trial)
+    %latency
+    if trial==1
+        EEG.event(trial).latency=latency;
+    else
+        EEG.event(trial).latency=EEG.event(trial-1).latency+length(EEG.times);
+    end
+    %duration
+    EEG.event(trial).duration=EEG.event(1).duration;
+    %channel
+    EEG.event(trial).channel=EEG.event(1).channel;
+    %bvktime/bvknum/visible/urevent
+    EEG.event(trial).bvtime=[];
+    EEG.event(trial).bvmknum=[];
+    EEG.event(trial).urevent=[];
+    %type
+    EEG.event(trial).type=trigger{:};
+    %code
+    EEG.event(trial).code='Stimulus';
+    %epoch
+    EEG.event(trial).epoch=trial;
+end
+%get rid of additional events
+if length(EEG.event)>length(data_after_rej.trial)
+    EEG.event(length(data_after_rej.trial)+1:length(EEG.event))=[];
+end
+   
 EEG=eeg_checkset(EEG);
+%% last cleaning step
+% scroll through (from gui) for a last check 
+% delete at least one so that eeglab does its stuff in the background
 eeglab redraw
 
+    
+%% save for matlab
+cd(dump_path)
+save(strcat('Beta02_TEP_fieldtrip'),'EEG')    
+    
+
 %% transform for MNE-Python
-EEG = pop_saveset( EEG, 'filename',strcat('Beta02_fieldtrip.set'),'filepath',raw_path);
+EEG = pop_saveset( EEG, 'filename',strcat('Beta02_fieldtrip2.set'),'filepath',dump_path);
 
 
 
