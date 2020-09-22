@@ -8,9 +8,10 @@ clear
 close all
 
 partic=2; %[2,4]
-ICA=0; %if 0 -> no ica at all
-    TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic
-refilt=0;
+ICA=1; %if 0 -> no ica at all
+    TESAICA=1; %if 0, runICA for blink, if 1 TESAICA automatic
+refilt=1;
+refilt_high=1;
 plot_steps=0;
 plot_all_elecs=0;
 S1_80=0;
@@ -33,7 +34,7 @@ plot_times=[-5 20];
 %% LOAD RAW
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TMS session from Sep11, Beta02, single pulses
-raw_path='C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG';
+raw_path='C:\Users\ckohl\Desktop\Data\TMS\EEG\';
 
 if S1_80
     filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000032.vhdr';
@@ -57,8 +58,7 @@ end
 % % (corresponding to pulses 207-212 in Brainsight file)
 % filename= 'actiCHamp_Plus_BC-TMS_BETA02_20200911_EOG000035.vhdr';
 
-EEG = pop_loadbv('C:\Users\ckohl\Desktop\Current\TMS\CurrentData\EEG\', filename, [], []);
-
+EEG = pop_loadbv(strcat(raw_path,'Raw - EEG-20200912T162305Z-001'), filename, [], []);
 
 channels=EEG.chanlocs;%for later
 [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
@@ -69,6 +69,9 @@ eeglab redraw
 %     %for S1_80, but no longer necessry
 % 	EEG = eeg_eegrej( EEG, [341 3225725;4621908 6973467;9305976 11206768;13518123 15378218;17828242 17962334;18376857 20565749;23383042 25310059;27935367 28506000]);
 % end
+% cd(raw_path)
+% EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_raw_cut.set'),'filepath',raw_path);
+% EEG = eeglab2fieldtrip(EEG,'raw','none')
 %EEG.data=detrend(EEG.data);
 
 %% First, let's see what triggerd there
@@ -462,6 +465,7 @@ end
 %% downsample
 EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:)=keep_EOG;%EOG needs to be downsampled too
 EEG= pop_resample(EEG,1000);
+
 keep_EOG=EEG.data(size(EEG.data,1)-1:size(EEG.data,1),:,:);%take back out
 dt=1;
 if plot_steps==true
@@ -553,9 +557,6 @@ if ICA
         EEG = pop_subcomp( EEG, [1], 0);
     end
 
-    eeglab redraw
-    this=pop_select(EEG, 'nochannel',[58 59]);
-    figure; pop_timtopo(this, [-50  500], [10 20 100 200]);
 
     if plot_steps==true
         figure(preprocfig2)
@@ -615,7 +616,11 @@ end
 
 
 if refilt
-    EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
+    if refilt_high
+        EEG=tesa_filtbutter(EEG,1,60,4,'bandpass')
+    else
+        EEG=tesa_filtbutter(EEG,1,100,4,'bandpass')
+    end
         %need new trials to plot
         trials_to_plot=sort(randi(size(EEG.data,3),1,nr_trials_to_plot));
         if plot_steps==true
@@ -639,7 +644,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Re-reference to Average
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-EEG = pop_reref( EEG, []);
+EEG = pop_reref( EEG, [],'exclude',[64 65] );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% save
@@ -672,3 +677,24 @@ save(strcat('Beta0',num2str(partic),'_TEP_',nameplus,name),'EEG')
 %% transform for MNE-Python
 EEG = pop_saveset( EEG, 'filename',strcat('Beta0',num2str(partic),'_TEP_',nameplus,name,'.set'),'filepath',raw_path);
 
+close all
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% get ready for hnn
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+time_oi=[0 200];
+data=mean(EEG.data(electr_oi_i,find(EEG.times==time_oi(1)):find(EEG.times==time_oi(2)),:),3);
+time=EEG.times(find(EEG.times==time_oi(1)):find(EEG.times==time_oi(2)));
+hnn_mat=[time',data'];
+cd('C:\Users\ckohl\Desktop\Current\TMS\My_TEPs\')
+save(strcat('Single_02_runica_refilt.txt'),'hnn_mat','-ascii')
