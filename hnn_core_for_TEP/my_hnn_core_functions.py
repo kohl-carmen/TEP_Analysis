@@ -489,6 +489,7 @@ def core_output_basic(dpls,net,name,data,compare,input_table,paramoitable,*args)
     #------------------------------------------------------------------------------------------------------------
     #figure:
     fig = plt.figure(figsize=(20,10))
+    plt.ion()
     #figManager = plt.get_current_fig_manager()
     #figManager.window.showMaximized()
     #--------------------

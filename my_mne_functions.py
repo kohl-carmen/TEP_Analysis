@@ -116,19 +116,42 @@ def import_dig_electrodes(electr_file_str,raw):
     fiducial_lines=[]
     channel_lines=[]
     head_lines=[]
+    eog_lines=0
+    # for line in range(0,len(electr_lines)):
+    #     if electr_lines[line][0]=='#':
+    #         comment_lines.append(line)
+    #     elif electr_lines[line][0:4]=='Nasi' or electr_lines[line][0:4]=='Left' or electr_lines[line][0:4]=='Righ' :
+    #         fiducial_lines.append(line)
+    #     elif electr_lines[line][0]=='h'or electr_lines[line][0]=='H':
+    #         head_lines.append(line)
+    #     else:
+    #         channel_lines.append(line)
+
+    # for updated brainsight output:
+    #For now, EOG is just counted asheadshape point, there might be a better way but not sure yet
     for line in range(0,len(electr_lines)):
+        second_column=str.find(electr_lines[line],'\t')+1
         if electr_lines[line][0]=='#':
             comment_lines.append(line)
-        elif electr_lines[line][0:4]=='Nasi' or electr_lines[line][0:4]=='Left' or electr_lines[line][0:4]=='Righ' :
+        elif electr_lines[line][second_column:second_column+3]=='Nas' or electr_lines[line][second_column:second_column+3]=='LPA' or electr_lines[line][second_column:second_column+3]=='RPA' :
             fiducial_lines.append(line)
-        elif electr_lines[line][0]=='h'or electr_lines[line][0]=='H':
+        elif electr_lines[line][second_column:second_column+3]=='Oth':
+            head_lines.append(line)
+        elif electr_lines[line][second_column:second_column+3]=='EOG':
+            eog_lines+=1
             head_lines.append(line)
         else:
             channel_lines.append(line)
+
+    # print('Found: \n'+str(len(comment_lines))+'\t Header lines \n'+str(len(fiducial_lines))+
+    #       '\t Fiducials \n'+str(len(channel_lines))+'\t Channels \n'+str(len(head_lines))+
+    #       '\t Head Shape Points \n'+str(len(electr_lines)-len(comment_lines)-len(fiducial_lines)
+    #       -len(channel_lines)-len(head_lines)) +'\t Unidentified lines')     
+
     print('Found: \n'+str(len(comment_lines))+'\t Header lines \n'+str(len(fiducial_lines))+
           '\t Fiducials \n'+str(len(channel_lines))+'\t Channels \n'+str(len(head_lines))+
-          '\t Head Shape Points \n'+str(len(electr_lines)-len(comment_lines)-len(fiducial_lines)
-          -len(channel_lines)-len(head_lines)) +'\t Unidentified lines')     
+          '\t Head Shape Points ('+ str(eog_lines)+ ' were labelled EOG)\n'+str(len(electr_lines)-len(comment_lines)-len(fiducial_lines)
+          -len(channel_lines)-len(head_lines)) +'\t Unidentified lines')    
     cont=input('Ok (y/n)?')
     if cont=='n':
         sys.exit()
@@ -142,31 +165,31 @@ def import_dig_electrodes(electr_file_str,raw):
         third_tab_i=electr_lines[head_lines[point]].find('\t',second_tab_i+1, len(electr_lines[head_lines[point]]))
         fourth_tab_i=electr_lines[head_lines[point]].find('\t',third_tab_i+1, len(electr_lines[head_lines[point]]))
         fifth_tab_i=electr_lines[head_lines[point]].find('\t',fourth_tab_i+1, len(electr_lines[head_lines[point]]))
-        last_tab_i=electr_lines[head_lines[point]].find('\n')  
+        sixth_tab_i=electr_lines[head_lines[point]].find('\t',fifth_tab_i+1, len(electr_lines[head_lines[point]]))
         X=float(electr_lines[head_lines[point]][third_tab_i+1:fourth_tab_i])/1000
         Y=float(electr_lines[head_lines[point]][fourth_tab_i+1:fifth_tab_i])/1000
-        Z=float(electr_lines[head_lines[point]][fifth_tab_i+1:last_tab_i])/1000
+        Z=float(electr_lines[head_lines[point]][fifth_tab_i+1:sixth_tab_i])/1000
         Headshape[point,:]=[X,Y,Z]
     
     # make fiducial variables
-        Nasion=[]
-        LPA=[]
-        RPA=[]
+    Nasion=[]
+    LPA=[]
+    RPA=[]
     for fids in range(0,len(fiducial_lines)):
         first_tab_i=electr_lines[fiducial_lines[fids]].find('\t')
         second_tab_i=electr_lines[fiducial_lines[fids]].find('\t',first_tab_i+1, len(electr_lines[fiducial_lines[fids]]))
         third_tab_i=electr_lines[fiducial_lines[fids]].find('\t',second_tab_i+1, len(electr_lines[fiducial_lines[fids]]))
         fourth_tab_i=electr_lines[fiducial_lines[fids]].find('\t',third_tab_i+1, len(electr_lines[fiducial_lines[fids]]))
         fifth_tab_i=electr_lines[fiducial_lines[fids]].find('\t',fourth_tab_i+1, len(electr_lines[fiducial_lines[fids]]))
-        last_tab_i=electr_lines[fiducial_lines[fids]].find('\n')  
+        sixth_tab_i=electr_lines[fiducial_lines[fids]].find('\t',fifth_tab_i+1, len(electr_lines[fiducial_lines[fids]]))
         X=float(electr_lines[fiducial_lines[fids]][third_tab_i+1:fourth_tab_i])/1000
         Y=float(electr_lines[fiducial_lines[fids]][fourth_tab_i+1:fifth_tab_i])/1000
-        Z=float(electr_lines[fiducial_lines[fids]][fifth_tab_i+1:last_tab_i])/1000
-        if electr_lines[fiducial_lines[fids]][0:4]=='Nasi':
+        Z=float(electr_lines[fiducial_lines[fids]][fifth_tab_i+1:sixth_tab_i])/1000
+        if electr_lines[fiducial_lines[fids]][first_tab_i+1:first_tab_i+4]=='Nas':
             Nasion=[X,Y,Z]
-        elif electr_lines[fiducial_lines[fids]][0:4]=='Left':
+        elif electr_lines[fiducial_lines[fids]][first_tab_i+1:first_tab_i+4]=='LPA':
             LPA=[X,Y,Z]
-        elif electr_lines[fiducial_lines[fids]][0:4]=='Righ':
+        elif electr_lines[fiducial_lines[fids]][first_tab_i+1:first_tab_i+4]=='RPA':
             RPA=[X,Y,Z]
         else:
             print('Fiducial Labels not recognised')
@@ -190,7 +213,7 @@ def import_dig_electrodes(electr_file_str,raw):
         third_tab_i=electr_lines[channel_lines[channel]].find('\t',second_tab_i+1, len(electr_lines[channel_lines[channel]]))    
         fourth_tab_i=electr_lines[channel_lines[channel]].find('\t',third_tab_i+1, len(electr_lines[channel_lines[channel]]))    
         fifth_tab_i=electr_lines[channel_lines[channel]].find('\t',fourth_tab_i+1, len(electr_lines[channel_lines[channel]]))    
-        last_tab_i=electr_lines[channel_lines[channel]].find('\n')  
+        sixth_tab_i=electr_lines[channel_lines[channel]].find('\t',fifth_tab_i+1, len(electr_lines[channel_lines[channel]]))    
         label=electr_lines[channel_lines[channel]][0:first_tab_i]
         #make sure spelling matches (this was needed before. not sure if it still is
         if label=='32':
@@ -210,7 +233,7 @@ def import_dig_electrodes(electr_file_str,raw):
            
         X=float(electr_lines[channel_lines[channel]][third_tab_i+1:fourth_tab_i])/1000
         Y=float(electr_lines[channel_lines[channel]][fourth_tab_i+1:fifth_tab_i])/1000
-        Z=float(electr_lines[channel_lines[channel]][fifth_tab_i+1:last_tab_i])/1000
+        Z=float(electr_lines[channel_lines[channel]][fifth_tab_i+1:sixth_tab_i])/1000
         
         #delete doubles
         double=False
@@ -251,7 +274,7 @@ def import_dig_electrodes(electr_file_str,raw):
     print('------------------------------------')
     fig = plt.figure()
     ax1=fig.add_subplot(121)
-    plt.imshow(mpimg.imread('C:/Users/ckohl/Desktop/Current/montage.JPG'))
+    plt.imshow(mpimg.imread('C:/Users/ckohl/Desktop/Current/EEG/Montage/montage.JPG'))
     ax1.title.set_text('Montage')
     ax1.axes.get_xaxis().set_visible(False)
     ax1.axes.get_yaxis().set_visible(False)

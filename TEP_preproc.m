@@ -63,6 +63,9 @@ channels=EEG.chanlocs;%for later
 [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
 eeglab redraw
 
+%EEG = eeg_eegrej( EEG, [341 3225725;4621908 6973467;9305976 11206768;13518123 15378218;17828242 17962334;18376857 20565749;23383042 25310059;27935367 28506000]);
+EEG.data=detrend(EEG.data);
+
 %% First, let's see what triggerd there
 count_triggers=[];
 trigger_types={};
@@ -99,6 +102,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Demean Remove DC offset
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%highpass filter
+EEG=pop_eegfiltnew(EEG, .1,[],[],0,[],0)
 %Remove DC offset
 % for trial=1:size(EEG.data,3)
 %     EEG.data(:,:,trial)=EEG.data(:,:,trial)-EEG.data(:,1,trial);

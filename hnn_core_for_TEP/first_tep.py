@@ -7,34 +7,24 @@
 #-------------------------------------
 #Init
 #-------------------------------------
-        
-
 OG_HNN=False
-
-
-## Original HNN
+import os
+os.chdir('C:\\Users\\ckohl\\hnn-core\\')
 from neuron import h
 h.nrn_load_dll('C:\\Users\\ckohl\\Miniconda3\\Lib\\site-packages\\hnn_core\\nrnmech.dll')
 import os.path as op
-if OG_HNN==True:
-    #import hnn_core
-    from hnn_core import simulate_dipole, Params, Network, read_params
-else:
-    #import hnn_core_ca
-    from hnn_core_ca import simulate_dipole, Params, Network, read_params
-import json
+from hnn_core import simulate_dipole, Params, Network, read_params
 import numpy as np
 import matplotlib.pyplot as plt
 import sys        
-#sys.path.append('C:\\Users\\ckohl\\Documents\\HNN core code\\')
-sys.path.append('C:\\Users\\ckohl\\Documents\/git-hnn_core_for_TEP\\')
+sys.path.append('C:\\Users\\ckohl\\Desktop\\Current\\TMS\\git-TEP_Analysis\\hnn_core_for_TEP\\')
 import my_hnn_core_functions as m
 from pptx import Presentation #https://python-pptx.readthedocs.io/en/latest/user/quickstart.html
 from pptx.util import Inches
 
 saving_dpl=False
 my_param_out_dir='C:\\Users\\ckohl\\hnn_out\\'
-dump_dir="C:\\Users\\ckohl\\Desktop\\Current\\HNN Core\\"     
+dump_dir="C:\\Users\\ckohl\\Desktop\\Current\\TMS\\"     
 
 
 #-------------------------------------
@@ -54,7 +44,7 @@ subtitle.text = "plot_from_hnn.py"
 
 
 ## pick a param file and tripple those inputs
-param_files=['default','Supra_ERPYesSupraT']
+param_files=['default']#,'Supra_ERPYesSupraT']
 add10=True
     
 for p in param_files:
@@ -150,9 +140,9 @@ for p in param_files:
     net=[]
     dpls=[]
     net = Network(these_params)
-    dpls = simulate_dipole(net, n_jobs=1, n_trials=1)
+    dpls = simulate_dipole(net, n_trials=1)
     #m.plot_hnn_core_output(dpls,net,'Supra_OG_x3',False,True,False,these_params)
-    data='C:\\Users\\ckohl\\Desktop\\Current\\TEP\\Digitised from papers\\Avg0204_filt.txt'
+    data='C:\\Users\\ckohl\\Desktop\\Current\\TMS\\My_TEPs\\Avg0204_filt.txt'
     if OG_HNN==True:
         name='OG'
     else:
