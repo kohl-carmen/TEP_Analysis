@@ -5,14 +5,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear
 
-partic=4;
-data_path='F:\Brown\TMS\Pilot\';
+partic=2;
+data_path='C:\Users\ckohl\Desktop\Current\Data\TMS\EEG\';
 Partic=[2,4];
 dt=1;
 TESAICA=0; %if 0, runICA for blink, if 1 TESAICA automatic (not done here but pick which preprocessed file you want)
 electr_oi='C3';
-
-
 
 
 %% PPT
@@ -21,22 +19,21 @@ h = actxserver('PowerPoint.Application');
 Presentation = h.Presentation.Add;
 
 
-
-fieldtrip_dir='C:\Users\ckohl\Documents\fieldtrip-20190802\fieldtrip-20190802';
-eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2019_0';
-rmpath(fieldtrip_dir)
-addpath(eeglab_dir)
+eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2020_0';
+cd(eeglab_dir)
 eeglab
 close all
 %% load data
-if TESAICA
-    name='TESA';
-else
-    name='run';
-end
-data=load(strcat(data_path,strcat('Beta0',num2str(partic),'_TEP_1k_',name,'ICA_filt100')));
+% if TESAICA
+%     name='TESA';
+% else
+%     name='run';
+% end
+% data=load(strcat(data_path,strcat('Beta0',num2str(partic),'_TEP_1k_',name,'ICA_filt100')));
+data=load(strcat(data_path,strcat('Beta0',num2str(partic),'_TEP_basic_forbeta')))
 EEG=data.EEG;
-EEG = pop_epoch( EEG, { 'S  1' }, [-1 0], 'epochinfo', 'yes');
+% EEG = pop_epoch( EEG, { 'S  1' }, [-1 0], 'epochinfo', 'yes');
+EEG = pop_epoch( EEG, { 'S 13' }, [-1 0], 'epochinfo', 'yes');
 
 bandfreq=[15 29];
 
@@ -235,7 +232,7 @@ EEG=data.EEG;
 
 Bins=[0 50 100 200 400 600 800 1000];
 Bins=[0 100 500 1000];
-Bins=[0 200 1000];
+Bins=[0 1000];
 TEP_in_bins=[];
 
 for trial=1:size(EEG.data,3)
