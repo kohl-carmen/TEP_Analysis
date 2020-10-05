@@ -204,6 +204,7 @@ fprintf('\n-----------------\n')
 %     end
 % end
 % First, check if all -pulses had the same target
+%( this doesn't got through all the targtes listed, it goes through all the targets used)
 targets_detected={};
 for trial=1:length(AssocTarget)
     targets_detected{end+1}=AssocTarget{trial};
@@ -243,7 +244,7 @@ end
 
 cont=input('Press any key to continue');
 
-target_coords=[Target_LocX(chosen_target), Target_LocY(chosen_target), Target_LocZ(chosen_target)];
+target_coords=[T_X,T_Y,T_Z];
 sample_coords=[LocX, LocY, LocZ];
 sample_coords=sample_coords(Target_vector==1,:);
 
