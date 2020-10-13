@@ -1,10 +1,10 @@
 % BrainSight spits out a text file - let's see what we can do with it
 clear
-file_dir='C:\Users\ckohl\Downloads\';
-file_name='EMGTEST'%Exported Brainsight Data'%Exported Brainsight Data_20191205.txt';%'20191121_Exported Brainsight Data'%
+file_dir='C:\Users\ckohl\Desktop\Current\Data\TMS\'
+file_name='Exported Brainsight Data_MNI'
 % mri_dir='C:\Users\ckohl\Documents\Virtual_Shared\Pilot\';
 partic='02';
-write_to_file=0;
+write_to_file=1;
 output_dir=file_dir;
 
 %% 3mm?
@@ -90,7 +90,7 @@ for row=1:size(firstcolumn_str,1)
             samples_start_row=[samples_start_row,row+1];
             targets_end_row=[targets_end_row,row-1];
         end
-        if firstcolumn_str{row}(1:6)=='Sample' & firstcolumn_str{row+1}(1:6)=='# Plan'
+        if firstcolumn_str{row}(1:6)=='Sample' & firstcolumn_str{row+1}(1)=='#'
             samples_end_row=[samples_end_row,row];
         end
     end
@@ -115,7 +115,7 @@ elseif samples_start_row >= samples_end_row
     fprintf('Sample Detection failed: Sample Start/End makes no sense \n')
 else
     fprintf('Sample Detection successful \n')
-    fprintf('%i Samples detected \n',samples_end_row-samples_start_row)
+    fprintf('%i Samples detected \n',samples_end_row-samples_start_row+1)
 end
 
 % get column headers
@@ -235,7 +235,7 @@ cont=input('Press any key to continue');
 fprintf('\n-----------------\n')
 fprintf('Detect MEPs')
 fprintf('\n-----------------\n')
-show_only_MEP_trials=0;
+show_only_MEP_trials=1;
 figure('units','normalized','outerposition',[0 0 1 1])
 look_for_MEP=[20 40];
 trial=0;
@@ -336,6 +336,7 @@ end
 
 close all
 fprintf('MEP Review done. \n%d MEPs detected during triple-pulses.\n',sum(Goodness_MEP==0 &Pulse_ID>0))
+fprintf('%d MEPs detected during single-pulses.\n',sum(Goodness_MEP==0 &Pulse_ID==0))
 
 cont=input('Press any key to continue');
 
@@ -348,12 +349,17 @@ cont=input('Press any key to continue');
 fprintf('\n-----------------\n')
 fprintf('Define Targets')
 fprintf('\n-----------------\n')
-% First, check if all triple-pulses had the same target
+% % First, check if all triple-pulses had the same target
+% targets_detected={};
+% for trial=1:length(AssocTarget)
+%     if Pulse_ID(trial)>0
+%         targets_detected{end+1}=AssocTarget{trial};
+%     end
+% end
+% First, check if all -pulses had the same target
 targets_detected={};
 for trial=1:length(AssocTarget)
-    if Pulse_ID(trial)>0
-        targets_detected{end+1}=AssocTarget{trial};
-    end
+    targets_detected{end+1}=AssocTarget{trial};
 end
 [targets_detected,temp,target_count]=unique(targets_detected);
 if length(targets_detected)>1
