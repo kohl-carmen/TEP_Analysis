@@ -232,8 +232,7 @@ for p in param_files:
             slide = prs.slides.add_slide(blank_slide_layout)
             pic = slide.shapes.add_picture(img_path, left, top, height=height,width=width)
             plt.close()
-prs.save(dump_dir+'\\new_pred_smooth_test4.pptx')
-
+#prs.save(dump_dir+'\\new_pred_smooth_test8.pptx')
 
 
 
@@ -245,7 +244,7 @@ plt.ion()
 count=0
 for k in keep_dpls:
     count+=1
-    plt.plot(k,color=palette[count],linewidth=2)
+    plt.plot(dpls[0].times[0:len(k)],k,color=palette[count],linewidth=2)
     plt.legend(delays)
 
-plt.plot(dpls_default[0].data['agg'],color='k',linewidth=2)
+plt.plot(dpls_default[0].times ,dpls_default[0].data['agg'],color='k',linewidth=2)
