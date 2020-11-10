@@ -36,7 +36,6 @@ events = mne.read_annotations(eeg_dir+raw_name[0:-4]+'vmrk')
 raw.set_annotations(events)
 events, event_ids = mne.events_from_annotations(raw)
 
-
 # Interpolate Pulse
 data, times = raw[:]  
 count_trials=0
@@ -55,6 +54,9 @@ for event in events:
 raw.load_data()            
 raw[:]=data
 del data
+if plot_steps:
+    plt.ion()
+    raw.plot()
 
 # Downsample
 raw,events=raw.resample(1000,events=events)
@@ -98,4 +100,4 @@ if plot_steps:
     evoked.plot(spatial_colors=True)
 
 # Save
-mne.Epochs.save(epochs, fname=eeg_dir+eeg_partic+'_TEP_basic_MNE.fif')    
+mne.Epochs.save(epochs, fname=eeg_dir+eeg_partic+'_TEP_basic-epo.fif')    
