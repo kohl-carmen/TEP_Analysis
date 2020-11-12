@@ -70,6 +70,7 @@ dt=.05;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Review=true;
+channel_oi=2;
 threshold=100;
 class=nan(size(EEG.data,3),1);
 base=nan(size(squeeze(EEG.data(channel_oi,:,:))));
@@ -131,24 +132,24 @@ for trial = 1:size(EEG.data,3)
             % all extreme values
             plot(EEG.times,base(:,review_trial),'-','Color',Class_colours{class(review_trial)});
             % identified saccade
-            ar=area(EEG.times,edited_base(:,review_trial))
+            ar=area(EEG.times,edited_base(:,review_trial));
             ar.EdgeColor=Class_colours{class(review_trial)};
             ar.FaceColor=Class_colours{class(review_trial)};
             ar.FaceAlpha=.5;
             % classification
             display_string=Class_string{class(review_trial)};
-            tx=text(EEG.times(1)+ EEG.times(end)/10,.4,display_string)
+            tx=text(EEG.times(1)+ EEG.times(end)/10,.4,display_string);
             tx.Color=Class_colours{class(review_trial)};
             tx.FontSize=15;      
         end
 
-        decision=input('All ok? (Yes: Enter, No: X)');
-        if decision=='x'
+        decision=input('All ok? (Yes: Enter, No: 1)');
+        if decision==1
             change_trials=input('Which trials are wrong? (Enter vector)\n');
-            for change=1:length(change_trials)
-                class(review_trial)=class(review_trial)-1;
-                if class(review_trial)==0
-                    class(review_trial)=2;
+            for change=change_trials
+                class(change)=class(change)-1;
+                if class(change)==0
+                    class(change)=2;
                 end
             end
         end
