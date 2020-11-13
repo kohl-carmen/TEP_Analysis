@@ -1,24 +1,17 @@
-% Tests response options
-% thumb movement vs eye movement
-
-% Recorded on Beta02 - 11.11.2020
-% EOG/EMG only
-
+%% Eye Movement Classifier
+% Takes horizontal EOG and defines left vs right responses
 
 clear
 close all
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% LOAD RAW
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % load eeglab
 eeglab_dir='C:\Users\ckohl\Documents\MATLAB\eeglab2020_0';
 cd(eeglab_dir)
 eeglab
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% LOAD RAW
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% TMS session from Sep11, Beta02, single pulses
 raw_path='C:\Users\ckohl\Downloads\';
 filename= 'actiCHamp_Plus_BC-TMS_BETA02_20201111_EOG_response_test000036.vhdr';
 dt=25;
@@ -26,9 +19,9 @@ dt=25;
 EEG = pop_loadbv(raw_path, filename, [], []);
 channels=EEG.chanlocs;
 [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
-eeglab redraw
 
-%% First, let's see what triggerd there
+
+%% Events
 count_triggers=[];
 trigger_types={};
 boundary_count=0;
@@ -59,7 +52,7 @@ EEG = pop_epoch( EEG, { 'right', 'left'}, [-2 2], 'epochinfo', 'yes');
 % need long epochs to get a proper mode baseline later
 EEG = pop_rmbase( EEG, [-999   -500]);
 
-% drop EEG channels
+% drop EEG channels & downsample (a lot)
 EEG=pop_select(EEG, 'nochannel',[1:63]);
 EEG= pop_resample(EEG,50);
 dt=.05;
@@ -68,10 +61,9 @@ dt=.05;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% CATEGORISE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Review=true;
+Review=true; % adds manual review
 channel_oi=2;
-threshold=100;
+threshold=100; % might have to tweak per person
 class=nan(size(EEG.data,3),1);
 base=nan(size(squeeze(EEG.data(channel_oi,:,:))));
 edited_base=zeros(size(squeeze(EEG.data(channel_oi,:,:))));
@@ -81,8 +73,8 @@ for trial = 1:size(EEG.data,3)
     channel_oi=2;
     %find extremes
     base(:,trial)=abs(EEG.data(channel_oi,:,trial)- mean(EEG.data(channel_oi,:,trial)))>threshold;
-    %base is just identifyign extreme values, so let's keep only the
-    %longest extreme interval    
+    
+    %keep only the longest extreme interval    
     base_i=1;
     longest_int=[];
     while base_i < length(base(:,trial))
@@ -96,27 +88,18 @@ for trial = 1:size(EEG.data,3)
             base_i=base_i+1;
         end
     end
-    % keep inly longest int
-    edited_base(longest_int,trial)=true;             
-
-%     subplot(5,6,trial)
-%     yyaxis left
-%     plot(EEG.data(channel_oi,:,trial),'Color',[.5 .5 .5])
-%     hold on
-%     yyaxis right
-%     plot(base(:,trial),'r-')
-%     plot(edited_base(:,trial),'k-','Linewidth',2 )
+    edited_base(longest_int,trial)=true;      
     
     % classify
     movement=mean(EEG.data(channel_oi,longest_int,trial));
-    background=mean(EEG.data(channel_oi,:,trial));
-    
+    background=mean(EEG.data(channel_oi,:,trial));    
     if movement > background
         class(trial)=1;
     else
         class(trial)=2;
     end
     
+    % plot and review
     if Review & (trial/9==round(trial/9) | trial==size(EEG.data,3))
         figure('units','normalized','outerposition',[0 0 1 1])
         count=0;
